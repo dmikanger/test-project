@@ -36,16 +36,48 @@
 import FormText from "@/components/FormText.vue"
 import TagButton from "@/components/TagButton";
 import router from "../router";
+import gql from "graphql-tag";
+
+const SET_TAGS = gql`
+    mutation setRank($userId: String, $rank: Int, $tags: String){
+    insert_opinions(objects: [{
+        userId: $userId
+        rank: $rank
+        tags: $tags
+    }]) {
+        returning {
+            id
+        }
+    }
+}
+`;
 
 export default {
     name: "TagPage",
     data: function (){
       return {
           userId: '',
-          rank: '',
-          tags: []
+          rank: 0,
+          tags: [],
       }
     },
+    // apollo: {
+    //     opinions: {
+    //         query: gql `
+    //             query {
+    //                 opinions {
+    //                     userId
+    //                     message
+    //                     rank
+    //                 }
+    //             }
+    //         `,
+    //         result({data}){
+    //             this.rank = data.rank;
+    //             console.log(data)
+    //         }
+    //     }
+    // },
     components: {
         FormText, TagButton
     },
@@ -68,6 +100,19 @@ export default {
         sendData() {
             this.checkSelectedButton();
             this.$store.commit('SET_TAGS', this.tags);
+            this.rank = this.$store.getters.USER_INFO.rank;
+
+            const { userId: userId, rank: rank} = this;
+            const tags = JSON.stringify( this.tags);
+            this.$apollo.mutate({
+                mutation: SET_TAGS,
+                variables: {
+                    userId,
+                    rank,
+                    tags
+                }
+            });
+
             router.push({name: 'message'})
         },
         goBack(){

@@ -34,6 +34,22 @@
 <script>
 import FormText from "@/components/FormText.vue"
 import router from "../router";
+import gql from "graphql-tag";
+
+const SET_MESSAGE = gql`
+    mutation setRank($userId: String, $message: String, $rank: Int, $tags: String){
+    insert_opinions(objects: [{
+        userId: $userId
+        rank: $rank
+        message: $message,
+        tags: $tags
+    }]) {
+        returning {
+            id
+        }
+    }
+}
+`;
 
 export default {
     name: "MessagePage",
@@ -62,6 +78,23 @@ export default {
         },
         sandData(){
             this.$store.commit('SET_MSG', this.message);
+
+            this.rank = this.$store.getters.USER_INFO.rank;
+            this.message = this.$store.getters.USER_INFO.message;
+            this.tags = this.$store.getters.USER_INFO.tags;
+
+            const tags = JSON.stringify( this.tags);
+            const { userId: userId, rank: rank, message: message} = this;
+            this.$apollo.mutate({
+                mutation: SET_MESSAGE,
+                variables: {
+                    userId,
+                    rank,
+                    message,
+                    tags
+                }
+            });
+
             console.log(this.userId, this.rank, this.tags, this.message)
         }
     }

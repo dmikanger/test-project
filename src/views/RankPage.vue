@@ -29,6 +29,20 @@
 import RankButton from '@/components/RankButton.vue'
 import FormText from "@/components/FormText.vue"
 import router from "../router";
+import gql from "graphql-tag";
+
+const SET_RANK = gql`
+    mutation setRank($userId: String, $rank: Int){
+    insert_opinions(objects: [{
+        userId: $userId
+        rank: $rank
+    }]) {
+        returning {
+            id
+        }
+    }
+}
+`;
 
 export default {
   name: 'RankPage',
@@ -38,22 +52,31 @@ export default {
   data: function () {
     return {
       userId: '',
-      rank: ''
+      rank: 0
     }
   },
   mounted: function (){
     if (!this.userId){
       this.userId = this.$store.getters.USER_INFO.userId;
     }
-    let rank = this.$store.getters.USER_INFO.rank;
-    if(rank){
-      let element = document.getElementById(rank);
+    this.rank = this.$store.getters.USER_INFO.rank;
+    if(this.rank){
+      let element = document.getElementById(this.rank);
       element.focus();
     }
   },
   methods: {
     onSendData: function (data) {
       this.$store.commit('SET_RANK', data);
+      this.rank = this.$store.getters.USER_INFO.rank;
+      const { userId: userId, rank: rank} = this;
+      this.$apollo.mutate({
+        mutation: SET_RANK,
+        variables: {
+          userId,
+          rank
+        }
+      });
       router.push({name: 'tags'})
     }
   }
